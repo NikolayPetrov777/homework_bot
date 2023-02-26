@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -49,7 +50,8 @@ def send_message(bot, message):
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except telegram.error.TelegramError as error:
-        logger.error(f'Не удалось отправить сообщение - {error}')
+        message = f'Не удалось отправить сообщение - {error}'
+        logger.error(message)
     else:
         logger.debug(f'Бот отправил сообщение: {message}')
 
@@ -63,36 +65,38 @@ def get_api_answer(timestamp):
         raise EndpointStatusError(error)
     if response.status_code != 200:
         raise EndpointStatusError('Ошибка в коде ответа')
-    return response.json()
+    try:
+        return response.json()
+    except json.JSONDecodeError:
+        message = 'Сервер вернул невалидный ответ'
+        logger.error(message)
 
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if 'current_date' not in response:
-        logger.error('Отсутствует ключ current_date')
+        message = 'Отсутствует ключ current_date'
+        logger.error(message)
     if not isinstance(response, dict):
         raise TypeError('Неверный тип данных API')
-    elif 'homeworks' not in response:
+    if 'homeworks' not in response:
         raise KeyError('Отсутствует ключ homeworks')
-    elif not isinstance(response['homeworks'], list):
+    if not isinstance(response['homeworks'], list):
         raise TypeError('Неверный тип данных домашки')
-    else:
-        return response['homeworks'][0]
+    return response['homeworks'][0]
 
 
 def parse_status(homework):
     """Извлекает статус проверки домашнего задания."""
     if 'homework_name' not in homework:
         raise KeyError('Отсутствует необходимый ключ homework_name')
-    elif 'status' not in homework:
+    if 'status' not in homework:
         raise KeyError('Отсутствует необходимый ключ status')
-    else:
-        homework_name = homework['homework_name']
-        homework_status = homework['status']
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
     if homework_status not in HOMEWORK_VERDICTS:
         raise KeyError('Отсутствует вердикт для данного статуса')
-    else:
-        verdict = HOMEWORK_VERDICTS[homework_status]
+    verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}": {verdict}'
 
 
@@ -103,6 +107,7 @@ def main():
         sys.exit('Отсутствует одна или несколько обязательных переменных')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
+    error_message = ''
     while True:
         try:
             response = get_api_answer(timestamp)
@@ -115,8 +120,9 @@ def main():
                 send_message(bot, status)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logger.error(message)
-            send_message(bot, message)
+            if message not in error_message:
+                error_message = message
+                logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
 
