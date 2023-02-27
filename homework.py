@@ -84,7 +84,7 @@ def check_response(response):
         raise TypeError('Неверный тип данных домашки')
     if 'current_date' not in response:
         message = 'Отсутствует ключ current_date'
-        logger.error(message) 
+        logger.error(message)
         raise KeyError('Отсутствует ключ current_date')
     return response['homeworks'][0]
 
