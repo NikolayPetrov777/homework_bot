@@ -54,6 +54,7 @@ def send_message(bot, message):
         logger.error(message)
     else:
         logger.debug(f'Бот отправил сообщение: {message}')
+    return telegram.Message
 
 
 def get_api_answer(timestamp):
@@ -70,19 +71,21 @@ def get_api_answer(timestamp):
     except json.JSONDecodeError:
         message = 'Сервер вернул невалидный ответ'
         logger.error(message)
+        raise EndpointStatusError('Ошибка в коде ответа')
 
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
-    if 'current_date' not in response:
-        message = 'Отсутствует ключ current_date'
-        logger.error(message)
     if not isinstance(response, dict):
         raise TypeError('Неверный тип данных API')
     if 'homeworks' not in response:
         raise KeyError('Отсутствует ключ homeworks')
     if not isinstance(response['homeworks'], list):
         raise TypeError('Неверный тип данных домашки')
+    if 'current_date' not in response:
+        message = 'Отсутствует ключ current_date'
+        logger.error(message) 
+        raise KeyError('Отсутствует ключ current_date')
     return response['homeworks'][0]
 
 
@@ -122,6 +125,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             if message not in error_message:
                 error_message = message
+                send_message(bot, message)
                 logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
