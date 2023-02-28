@@ -54,7 +54,7 @@ def send_message(bot, message):
         logger.error(message)
     else:
         logger.debug(f'Бот отправил сообщение: {message}')
-    return telegram.Message
+    return True
 
 
 def get_api_answer(timestamp):
@@ -124,8 +124,8 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             if message not in error_message:
-                error_message = message
                 send_message(bot, message)
+                error_message = message
                 logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
