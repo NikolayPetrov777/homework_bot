@@ -49,12 +49,12 @@ def send_message(bot, message):
     """Отправляет информационные сообщения в Telegram."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        logger.debug(f'Бот отправил сообщение: {message}')
+        return True
     except telegram.error.TelegramError as error:
         message = f'Не удалось отправить сообщение - {error}'
         logger.error(message)
-    else:
-        logger.debug(f'Бот отправил сообщение: {message}')
-    return telegram.Message
+        return False
 
 
 def get_api_answer(timestamp):
@@ -125,7 +125,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             if message not in error_message:
                 send_message(bot, message)
-                if error_message is telegram.Message:
+                if send_message(bot, message) == True:
                     error_message = message
                     logger.error(message)
         finally:
