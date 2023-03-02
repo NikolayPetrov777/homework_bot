@@ -125,7 +125,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             if message not in error_message:
                 send_message(bot, message)
-                if send_message(bot, message) == True:
+                if send_message(bot, message) is True:
                     error_message = message
                     logger.error(error_message)
         finally:
