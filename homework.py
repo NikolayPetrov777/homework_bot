@@ -127,7 +127,7 @@ def main():
                 send_message(bot, message)
                 if send_message(bot, message) == True:
                     error_message = message
-                    logger.error(message)
+                    logger.error(error_message)
         finally:
             time.sleep(RETRY_PERIOD)
 
